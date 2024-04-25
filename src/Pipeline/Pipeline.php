@@ -68,7 +68,7 @@ class Pipeline {
 	 *
 	 * @return $this
 	 */
-	public function send( mixed $passable ): self {
+	public function send( $passable ): self {
 		$this->passable = $passable;
 
 		return $this;
@@ -81,7 +81,7 @@ class Pipeline {
 	 *
 	 * @return $this
 	 */
-	public function through( mixed $pipes ): self {
+	public function through( $pipes ): self {
 		$this->pipes = is_array( $pipes ) ? $pipes : func_get_args();
 
 		return $this;
