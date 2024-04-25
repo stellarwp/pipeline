@@ -81,7 +81,7 @@ class PipelineTest extends AbstractBase {
 
 	public function test_it_runs_a_pipeline_using_object_handlers(): void {
 		$stage1 = new class() {
-			public function handle( string $passable, Closure $next ): mixed {
+			public function handle( string $passable, Closure $next ) {
 				$passable = ucwords( $passable );
 
 				return $next( $passable );
@@ -89,7 +89,7 @@ class PipelineTest extends AbstractBase {
 		};
 
 		$stage2 = new class() {
-			public function handle( string $passable, Closure $next ): mixed {
+			public function handle( string $passable, Closure $next ) {
 				$passable = str_ireplace( 'All', 'All The', $passable );
 
 				return $next( $passable );
@@ -108,7 +108,7 @@ class PipelineTest extends AbstractBase {
 
 	public function test_it_runs_a_pipeline_using_custom_object_handlers(): void {
 		$stage1 = new class() {
-			public function run( string $passable, Closure $next ): mixed {
+			public function run( string $passable, Closure $next ) {
 				$passable = ucwords( $passable );
 
 				return $next( $passable );
@@ -116,7 +116,7 @@ class PipelineTest extends AbstractBase {
 		};
 
 		$stage2 = new class() {
-			public function run( string $passable, Closure $next ): mixed {
+			public function run( string $passable, Closure $next ) {
 				$passable = str_ireplace( 'All', 'All The', $passable );
 
 				return $next( $passable );

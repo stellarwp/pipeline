@@ -1,0 +1,27 @@
+name: Coding Standards
+
+on:
+    pull_request:
+
+jobs:
+    phpcs:
+        name: PHP Code Sniffer
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Clone Repository
+              uses: actions/checkout@v4
+              with:
+                ref: ${{ github.ref }}
+
+            - name: Set Up PHP & Composer
+              uses: shivammathur/setup-php@v2
+              with:
+                php-version: '7.4'
+                tools: composer
+
+            - name: Install Dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist
+
+            - name: Check Coding Standards
+              run: ./vendor/bin/phpcs
