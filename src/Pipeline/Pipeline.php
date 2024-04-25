@@ -120,7 +120,8 @@ class Pipeline {
 	 *
 	 * @return mixed
 	 */
-	public function then( Closure $destination ): mixed {
+	#[\ReturnTypeWillChange]
+	public function then( Closure $destination ) {
 		$pipeline = array_reduce(
 			array_reverse( $this->pipes() ),
 			$this->carry(),
@@ -132,13 +133,22 @@ class Pipeline {
 
 	/**
 	 * Run the pipeline and return the result.
+	 *
+	 * @return mixed
 	 */
-	public function then_return(): mixed {
+	#[\ReturnTypeWillChange]
+	public function then_return() {
 		return $this->then( fn( $passable ) => $passable );
 	}
 
 	/**
 	 * Get the final piece of the Closure onion.
+	 *
+	 * @throws \RuntimeException
+	 *
+	 * @param Closure $destination The destination callback.
+	 *
+	 * @return Closure
 	 */
 	protected function prepare_destination( Closure $destination ): Closure {
 		return function( $passable ) use ( $destination ) {
@@ -152,6 +162,10 @@ class Pipeline {
 
 	/**
 	 * Get a Closure that represents a slice of the application onion.
+	 *
+	 * @throws \RuntimeException
+	 *
+	 * @return Closure
 	 */
 	protected function carry(): Closure {
 		return function ( $stack, $pipe ) {
@@ -202,6 +216,8 @@ class Pipeline {
 	/**
 	 * Parse full pipe string to get name and parameters.
 	 *
+	 * @param string $pipe The pipe string to parse.
+	 *
 	 * @return array<int, mixed>
 	 */
 	protected function parse_pipe_string( string $pipe ): array {
@@ -239,7 +255,8 @@ class Pipeline {
 	/**
 	 * Handle the value returned from each pipe before passing it to the next.
 	 */
-	protected function handle_carry( mixed $carry ): mixed {
+	#[\ReturnTypeWillChange]
+	protected function handle_carry( $carry ) {
 		return $carry;
 	}
 
@@ -253,7 +270,8 @@ class Pipeline {
 	 *
 	 * @throws Throwable The exception to throw.
 	 */
-	protected function handle_exception( mixed $passable, Throwable $e ): mixed {
+	#[\ReturnTypeWillChange]
+	protected function handle_exception( $passable, Throwable $e ) {
 		throw $e;
 	}
 
@@ -276,7 +294,8 @@ class Pipeline {
 	 *
 	 * @return mixed
 	 */
-	public function thenReturn(): mixed { // phpcs:ignore
+	#[\ReturnTypeWillChange]
+	public function thenReturn() { // phpcs:ignore
 		return $this->then_return();
 	}
 }
