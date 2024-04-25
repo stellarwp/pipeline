@@ -26,6 +26,10 @@
     {
       "name": "Matthew Batchelder",
       "email": "matt.batchelder@stellarwp.com"
+    },
+    {
+      "name": "Justin Frydman",
+      "email": "justin@stellarwp.com"
     }
   ],
   "minimum-stability": "stable",
