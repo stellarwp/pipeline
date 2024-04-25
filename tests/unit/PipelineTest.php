@@ -33,6 +33,19 @@ class PipelineTest extends AbstractBase {
 		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
 	}
 
+	public function test_it_runs_a_pipeline_with_callables_and_executes_the_destination(): void {
+		$pipeline = $this->container->get( Pipeline::class );
+		$result   = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )
+			->through(
+				'ucwords',
+				'trim',
+			)->then( static function ( $passable ) {
+				return str_ireplace( 'A Sample', 'A Nice Long', $passable );
+			} );
+
+		$this->assertSame( 'A Nice Long String That Is Passed Through To All Pipes.', $result );
+	}
+
 	public function test_it_runs_a_pipeline_with_callables_and_closures(): void {
 		$pipeline = $this->container->get( Pipeline::class );
 		$result   = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )

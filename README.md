@@ -14,6 +14,7 @@ A Pipeline / Command Design Pattern implementation based on [Laravel's Pipeline 
   * [Using closures](#using-closures)
   * [Using classes with the `handle` method](#using-classes-with-the-handle-method)
   * [Using classes with a custom method](#using-classes-with-a-custom-method)
+  * [Doing more than returning](#doing-more-than-returning)
 
 ## Installation
 
@@ -209,5 +210,33 @@ $result = $pipeline->via( 'run' )
 
 // The output would be stored in $result and would be:
 // A Sample String That Is Passed Through To All Pipes.
+echo $result;
+```
+
+### Doing more than returning
+
+Sometimes you may want to do something more than just return the result when the pipeline completes. You can do that by
+using the `then()` method instead of `then_return()`.
+
+#### Example pipeline
+
+```php
+use Boom\Shakalaka\StellarWP\Pipeline\Pipeline;
+use Boom\Shakalaka\Container;
+
+$container = new Container();
+$pipeline  = new Pipeline( $container );
+
+// The input is a string with no capitalization and a whole bunch of trailing whitespace.
+$result = $pipeline->send( 'a sample string that is passed through to all pipes.         ' )
+	->through(
+		'trim',
+		'ucwords'
+	)->then( static function ( $passable ) {
+		return str_ireplace( 'A Sample', 'A Nice Long', $passable );
+	} );
+
+// The output would be stored in $result and would be:
+// A Nice Long String That Is Passed Through To All Pipes.
 echo $result;
 ```
