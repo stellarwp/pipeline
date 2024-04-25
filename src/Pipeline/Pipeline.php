@@ -23,7 +23,7 @@ class Pipeline {
 	 *
 	 * @var mixed
 	 */
-	protected mixed $passable;
+	protected $passable;
 
 	/**
 	 * The array of class pipes.
