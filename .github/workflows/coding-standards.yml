@@ -21,7 +21,7 @@ jobs:
                 tools: composer
 
             - name: Install Dependencies
-              run: composer install --no-interaction --no-progress --prefer-dist
+              run: composer install --ignore-platform-reqs --no-interaction --no-progress --prefer-dist
 
             - name: Check Coding Standards
               run: ./vendor/bin/phpcs
