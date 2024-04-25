@@ -91,7 +91,7 @@ $pipeline  = new Pipeline( $container );
 // The input is a string with no capitalization and a whole bunch of trailing whitespace.
 $result = $pipeline->send( 'a sample string that is passed through to all pipes.         ' )
 	->through(
-		static function ( string $passable, Closure $next ) {
+		static function ( $passable, Closure $next ) {
 			$passable = str_ireplace( 'All', 'All The', $passable );
 
 			return $next( $passable );
