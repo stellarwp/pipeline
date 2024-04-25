@@ -1,0 +1,6 @@
+actor: UnitTester
+modules:
+  enabled:
+    - Asserts
+    - Cli
+    - \StellarWP\Pipeline\Tests\Helper\Unit
