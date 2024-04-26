@@ -671,19 +671,7 @@ class Listener implements Pipe {
 		$this->response_pipeline = $response_pipeline;
 	}
 
-	public function handle_response( WP_REST_Request $request ): void {
-
-		// Retrieve information
-		$response_code    = wp_remote_retrieve_response_code( $request );
-		$response_message = wp_remote_retrieve_response_message( $request );
-		$response_body    = wp_remote_retrieve_body( $request );
-
-		$response = new WP_REST_Response( [
-			'status'        => $response_code,
-			'response'      => $response_message,
-			'body_response' => $response_body,
-		] );
-
+	public function handle_response( WP_REST_Response $response, WP_REST_Request $request ): void {
 		$response = rest_ensure_response( $response );
 
 		if ( is_wp_error( $response ) ) {
@@ -710,13 +698,14 @@ $provider  = new Service_Provider( $container );
 $provider->register();
 
 // Likewise, these lines would likely be done in a class somewhere.
-$request  = wp_remote_get( 'https://example.com/myproject/v1/borkborkbork', [ 'color' => 'blue' ] );
+$request  = new WP_REST_Request( 'GET', '/myproject/v1/borkborkbork', [ 'color' => 'blue' ] );
+$response = rest_do_request( $request );
 
 // Get an instance of the Listener class.
 $listener = $container->get( Listener::class );
 
 // Pass the request to the listener, which will invoke the pipeline.
-$listener->handle_response( $request );
+$listener->handle_response( $response, $request );
 
 // If the request was successful, the `myproject/rest/event` action will be fired once to indicate
 // that the response was received.
@@ -727,13 +716,15 @@ $listener->handle_response( $request );
 // We can do the same thing for other requests.
 
 // Likewise, these lines would likely be done in a class somewhere. These would probably live in different classes.
-$request  = wp_remote_get( 'https://example.com/myproject/v1/something-else' );
+$request  = new WP_REST_Request( 'GET', '/myproject/v1/something-else' );
+$response = rest_do_request( $request );
 $listener = $container->get( Listener::class );
-$listener->handle_response( $request );
+$listener->handle_response( $response, $request );
 
-$request  = wp_remote_get( 'https://example.com/myproject/v1/borkborkbork' );
+$request  = new WP_REST_Request( 'GET', 'myproject/v1/borkborkbork' );
+$response = rest_do_request( $request );
 $listener = $container->get( Listener::class );
-$listener->handle_response( $request );
+$listener->handle_response( $response, $request );
 ```
 
 ## Methods
