@@ -659,13 +659,12 @@ Finally, we'll create our Listener class.
 ```php
 namespace MyProject\Listeners;
 
-use StellarWP\Pipeline\Contracts\Pipe;
 use MyProject\Container;
-use MyProject\Response\Intake_Response;
-use MyProject\Response\Failed_Response;
 use MyProject\Response\Response_Transporter;
+use WP_REST_Request;
+use WP_REST_Response;
 
-class Listener implements Pipe {
+class Listener {
 	/**
 	 * @var Pipeline
 	 */
