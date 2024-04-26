@@ -88,16 +88,40 @@ class Pipeline {
 	}
 
 	/**
+	 * This is an alias of the `through()` method.
+	 *
+	 * @param array|mixed $pipes The pipes to set.
+	 *
+	 * @return $this
+	 */
+	public function pipes( $pipes ): self {
+		return $this->through( is_array( $pipes ) ? $pipes : func_get_args() );
+	}
+
+	/**
 	 * Push additional pipes onto the pipeline.
 	 *
 	 * @param array|mixed $pipes The pipes to push onto the pipeline.
 	 *
 	 * @return $this
 	 */
-	public function pipe( mixed $pipes ): self {
+	public function pipe( $pipes ): self {
 		array_push( $this->pipes, ...( is_array( $pipes ) ? $pipes : func_get_args() ) );
 
 		return $this;
+	}
+
+	/**
+	 * Alias of `pipe()`.
+	 *
+	 * @param array|mixed $pipes The pipes to push onto the pipeline.
+	 *
+	 * @return $this
+	 */
+	public function add_pipe( $pipes ): self {
+		$pipes = is_array( $pipes ) ? $pipes : func_get_args();
+
+		return $this->pipe( $pipes );
 	}
 
 	/**
@@ -116,14 +140,18 @@ class Pipeline {
 	/**
 	 * Run the pipeline with a final destination callback.
 	 *
-	 * @param Closure $destination The destination callback.
+	 * @param Closure|null $destination The destination callback.
 	 *
 	 * @return mixed
 	 */
 	#[\ReturnTypeWillChange]
-	public function then( Closure $destination ) {
+	public function then( Closure $destination = null ) {
+		if ( ! $destination ) {
+			$destination = fn( $passable ) => $passable;
+		}
+
 		$pipeline = array_reduce(
-			array_reverse( $this->pipes() ),
+			array_reverse( $this->get_pipes() ),
 			$this->carry(),
 			$this->prepare_destination( $destination )
 		);
@@ -134,11 +162,35 @@ class Pipeline {
 	/**
 	 * Run the pipeline and return the result.
 	 *
+	 * @param Closure|null $destination The destination callback.
+	 *
 	 * @return mixed
 	 */
 	#[\ReturnTypeWillChange]
 	public function then_return() {
-		return $this->then( fn( $passable ) => $passable );
+		return $this->then();
+	}
+
+	/**
+	 * Alias of `then()`.
+	 *
+	 * @param Closure|null $destination The destination callback.
+	 *
+	 * @return mixed
+	 */
+	#[\ReturnTypeWillChange]
+	public function run( Closure $destination = null ) {
+		return $this->then( $destination );
+	}
+
+	/**
+	 * Alias of `then_return()`.
+	 *
+	 * @return mixed
+	 */
+	#[\ReturnTypeWillChange]
+	public function run_and_return() {
+		return $this->then_return();
 	}
 
 	/**
@@ -235,7 +287,7 @@ class Pipeline {
 	 *
 	 * @return mixed[]
 	 */
-	protected function pipes(): array {
+	protected function get_pipes(): array {
 		return $this->pipes;
 	}
 

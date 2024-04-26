@@ -147,4 +147,111 @@ class PipelineTest extends AbstractBase {
 
 		$this->assertSame( 'A Sample String That Is Passed Through To All The Pipes.', $result );
 	}
+
+	public function test_it_runs_a_pipeline_by_sending_late(): void {
+		$pipeline = $this->container->get( Pipeline::class );
+		$pipeline->through(
+			'ucwords',
+			'trim'
+		);
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->thenReturn();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+	}
+
+	public function test_it_runs_a_pipeline_setup_via_pipe(): void {
+		$pipeline = $this->container->get( Pipeline::class );
+		$pipeline->pipe(
+			'ucwords',
+			'trim'
+		);
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->thenReturn();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+	}
+
+	public function test_it_runs_a_function_pipeline_without_a_container(): void {
+		$pipeline = new Pipeline();
+		$pipeline->pipe(
+			'ucwords',
+			'trim'
+		);
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->thenReturn();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+	}
+
+	public function test_it_runs_a_closure_pipeline_without_a_container(): void {
+		$pipeline = new Pipeline();
+		$result   = $pipeline->send( 'a sample string that is passed through to all pipes.' )
+			->through(
+				static function ( string $passable, Closure $next ) {
+					$passable = ucwords( $passable );
+
+					return $next( $passable );
+				},
+				static function ( string $passable, Closure $next ) {
+					$passable = str_ireplace( 'All', 'All The', $passable );
+
+					return $next( $passable );
+				}
+			)->thenReturn();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All The Pipes.', $result );
+	}
+
+	public function test_it_runs_a_class_pipeline_without_a_container(): void {
+		$pipeline = new Pipeline();
+		$result   = $pipeline->send( 'a sample string that is passed through to all pipes.' )
+			->through(
+				new PipelineStageOne(),
+				new PipelineStageTwo()
+			)->thenReturn();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All The Pipes.', $result );
+	}
+
+	public function test_it_runs_a_pipeline_setup_with_aliases(): void {
+		$pipeline = $this->container->get( Pipeline::class );
+		$pipeline->pipes(
+			'ucwords',
+			'trim'
+		);
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->run_and_return();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+
+		$pipeline = $this->container->get( Pipeline::class );
+		$pipeline->add_pipe( 'ucwords' );
+		$pipeline->add_pipe( 'trim' );
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->run();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+
+		$pipeline = $this->container->get( Pipeline::class );
+		$pipeline->pipe(
+			'ucwords',
+			'trim',
+		);
+
+		$result = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )->run();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+	}
+
+	public function test_it_runs_a_pipeline_with_callables_with_an_empty_then(): void {
+		$pipeline = $this->container->get( Pipeline::class );
+		$result   = $pipeline->send( 'a sample string that is passed through to all pipes.       ' )
+			->through(
+				'ucwords',
+				'trim',
+			)->then();
+
+		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
+	}
 }

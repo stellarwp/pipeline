@@ -1,6 +1,6 @@
 {
   "name": "stellarwp/pipeline",
-  "description": "A library for implementing a Pipeline / Command Design Pattern.",
+  "description": "A library that implements the Chain of Responsibility pattern.",
   "type": "library",
   "license": "GPL-2.0",
   "platform": {
