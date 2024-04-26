@@ -36,6 +36,14 @@ flowchart LR
   * [Using classes with a custom method](#using-classes-with-a-custom-method)
   * [Doing more than returning](#doing-more-than-returning)
   * [Using a container in the pipeline](#using-a-container-in-the-pipeline)
+  * [Declaring pipelines for reuse](#declaring-pipelines-for-reuse)
+    * [Example](#example)
+      * [Service provider](#service-provider)
+      * [Response transporter](#response-transporter)
+      * [Intake_response](#intake_response)
+      * [Failed_response](#failed_response)
+      * [Listener](#listener)
+      * [Let's put it all together](#lets-put-it-all-together)
 * [Methods](#methods)
   * [`pipe()`](#pipe) (aliases: `add_pipe()`)
   * [`send()`](#send)
@@ -439,6 +447,284 @@ $result = $pipeline->run();
 echo $result;
 ```
 
+### Declaring pipelines for reuse
+
+A common approach to using pipelines is to declare them in a dependency injection container so that you can get an instance
+of a specifically configured pipeline when you need it.
+
+#### Example
+
+In this example, we are accepting in a `WP_REST_Response` object and we want to use a pipeline to process the response and fire off some actions based on the contents of the object.
+
+We'll start with a couple of assumptions:
+1. We are building some WordPress logic.
+2. We will declare the reusable pipelines in a Service Provider class that extends a class named `MyProject\AbstractServiceProvider` and we can pretend that it accepts a container instance as a constructor argument.
+3. That Service Provider class gets instantiated _somewhere_ in our application and has a class property called `$container` that holds a container instance.
+4. Our container conforms to the `StellarWP\ContainerContract\ContainerInterface` interface from the [stellarwp/container-contract](https://github.com/stellarwp/container-contract) library.
+
+This example's directory structure looks something like this:
+
+```
+MyProject/
+	Listeners/
+		Listener.php
+	Providers/
+		Service_Provider.php
+	Response/
+		Intake_Response.php
+		Failed_Response.php
+	Container.php
+	Put_It_All_Together.php
+```
+
+##### Service provider
+
+First, we'll create our service provider class.
+
+```php
+namespace MyProject\Providers;
+
+use StellarWP\Pipeline\Pipeline;
+use MyProject\Container;
+use MyProject\Response\Intake_Response;
+use MyProject\Response\Failed_Response;
+
+class Service_Provider {
+	/**
+	 * @var ContainerInterface
+	 */
+	protected $container;
+
+	/**
+	 * @param ContainerInterface $container
+	 */
+	public function __construct( ContainerInterface $container ) {
+		$this->container = $container;
+	}
+
+	/**
+	* Register some services into the container.
+	 */
+	public function register() {
+		// Bind `request-pipeline` to the container as a singleton. The first time that `->get( 'request-pipeline' )` is
+		// called, the pipeline will will be instantiated and returned. Subsequent calls to `->get( 'request-pipeline' )`
+		// will return the same instance of the pipeline.
+		$this->container->singleton( 'request-pipeline', function(): Pipeline {
+			$pipeline = new Pipeline( $this->container );
+			$pipeline->pipes(
+				Intake_Response::class,
+				Failed_Response::class,
+			);
+
+			return $pipeline;
+		} );
+
+		// Bind the class name of Listener to the container. Any time that `->get( Listener::class )` is called, a new
+		// instance of the Listener will be returned with the `request-pipeline` injected into the constructor.
+		$this->container->bind( Listener::class, static function ( ContainerInterface $container ): Listener {
+			return new Listener( $container->get( 'request-pipeline' ) );
+		} );
+	}
+}
+```
+
+##### Response_Transporter
+
+Let's create a really simple object that will hold both a `WP_REST_Request` and a `WP_REST_Response` instance. This will
+be the object that we pass through our pipeline.
+
+```php
+namespace MyProject\Response;
+
+use WP_REST_Request;
+use WP_REST_Response;
+
+class Response_Transporter {
+	/**
+	 * @var WP_REST_Request
+	 */
+	public $request;
+
+	/**
+	 * @var WP_REST_Response
+	 */
+	public $response;
+
+	/**
+	 * @param WP_REST_Request $request
+	 * @param WP_REST_Response $response
+	 */
+	public function __construct( WP_REST_Request $request, WP_REST_Response $response ) {
+		$this->request  = $request;
+		$this->response = $response;
+	}
+}
+```
+
+##### Intake_Response
+
+Next, we'll create our Intake_Response class.
+
+```php
+namespace MyProject\Response;
+
+use StellarWP\Pipeline\Contracts\Pipe;
+use WP_REST_Response;
+use WP_Http;
+
+class Intake_Response implements Pipe {
+	public static $name = 'Response received';
+	public static $endpoint = '/myproject/v1/borkborkbork';
+
+	public function handle( Response_Transporter $transporter, Closure $next ): WP_REST_Response {
+		// If the response is for the endpoint we're looking for, we'll process it.
+		// Otherwise, it'll just keep moving through the pipeline.
+		if ( $transporter->request->get_route() === static::$endpoint ) {
+			$params = (array) $transporter->response->get_data();
+			$status = $transporter->response->get_status();
+
+			$data = [
+				'status' => $status,
+				'params' => $params,
+			];
+
+			/**
+			 * Advertise that we've received the response and what its data is.
+			 *
+			 * @param string $name The name of the response.
+			 * @param array  $data The data that was received.
+			 */
+			do_action( 'myproject/rest/event', static::$name, $data );
+		}
+
+		// Pass the transporter on to the next pipe in the pipeline.
+		return $next( $transporter );
+	}
+}
+```
+
+##### Failed_Response
+
+Next, we'll create our Failed_Response class.
+
+```php
+namespace MyProject\Response;
+
+use StellarWP\Pipeline\Contracts\Pipe;
+use WP_REST_Response;
+
+class Failed_Response implements Pipe {
+	public static $name = 'Response failed';
+	public static $endpoint = '/myproject/v1/borkborkbork';
+
+	public function handle( Response_Transporter $transporter, Closure $next ): WP_REST_Response {
+		// If the response is for the endpoint we're looking for, we'll process it.
+		// Otherwise, it'll just keep moving through the pipeline.
+		if ( $transporter->request->get_route() === static::$endpoint ) {
+			$status  = $transporter->response->get_status();
+			$success = $status >= WP_Http::OK && $status < WP_Http::BAD_REQUEST;
+
+			// If the response was successful, let's keep moving through the pipeline.
+			if ( $success ) {
+				return $next( $transporter );
+			}
+
+			/**
+			 * Oh no! The response was not successful. Let's notify our application that something went wrong.
+			 *
+			 * @param string $name The name of the response.
+			 * @param array  $data The data associated with the error.
+			 */
+			do_action( 'myproject/rest/event', static::$name, [
+				'error-params' => $transporter->response->get_data(),
+			] );
+		}
+
+		// Pass the transporter on to the next pipe in the pipeline.
+		return $next( $transporter );
+	}
+}
+```
+
+##### Listener
+
+Finally, we'll create our Listener class.
+
+```php
+namespace MyProject\Listeners;
+
+use StellarWP\Pipeline\Contracts\Pipe;
+use MyProject\Container;
+use MyProject\Response\Intake_Response;
+use MyProject\Response\Failed_Response;
+
+class Listener implements Pipe {
+	/**
+	 * @var Pipeline
+	 */
+	protected $response_pipeline;
+
+	/**
+	 * @param Pipeline $response_pipeline
+	 */
+	public function __construct( Pipeline $response_pipeline ) {
+		$this->response_pipeline = $response_pipeline;
+	}
+
+	public function handle_response( WP_REST_Request $request ): void {
+
+		// Retrieve information
+		$response_code    = wp_remote_retrieve_response_code( $request );
+		$response_message = wp_remote_retrieve_response_message( $request );
+		$response_body    = wp_remote_retrieve_body( $request );
+
+		$response = new WP_REST_Response( [
+			'status'        => $response_code,
+			'response'      => $response_message,
+			'body_response' => $response_body,
+		] );
+
+		$response = rest_ensure_response( $response );
+
+		if ( is_wp_error( $response ) ) {
+			$response = rest_convert_error_to_response( $response );
+		}
+
+		return $this->response_pipeline->send( new Response_Transporter( $request, $response ) )->then_return();
+	}
+```
+
+##### Let's put it all together
+
+```php
+namespace MyProject;
+
+use MyProject\Container;
+use MyProject\Listeners\Listener;
+use MyProject\Providers\Service_Provider;
+
+// Typically the next three lines would be done in a more application-relevant location, however, for the sake of
+// this example, we'll just include them here.
+$container = new Container();
+$provider  = new Service_Provider( $container );
+$provider->register();
+
+// Likewise, these lines would likely be done in a class somewhere.
+$request  = wp_remote_get( 'https://example.com/myproject/v1/borkborkbork', [ 'color' => 'blue' ] );
+
+// Get an instance of the Listener class.
+$listener = $container->get( Listener::class );
+
+// Pass the request to the listener, which will invoke the pipeline.
+$listener->handle_response( $request );
+
+// If the request was successful, the `myproject/rest/event` action will be fired once to indicate
+// that the response was received.
+
+// If the request was NOT successful, the `myproject/rest/event` action will be fired once to indicate
+// that the response was received. And a second time to indicate that there was an error.
+```
+
 ## Methods
 
 ### `pipe()`
@@ -579,7 +865,7 @@ $pipeline->through( SweetUppercasePipe::class, TrimTheStringPipe::class );
 
 ### `via()`
 
-This method is used to set the method to call on the pipes.
+This method is used to set the method to call on all the pipes in the pipeline.
 
 ```php
 public function via( string $method ): self
@@ -587,9 +873,9 @@ public function via( string $method ): self
 
 #### Examples
 ```php
-// Set the method used in a class to process the data as `execute()`.
+// Set the method used in all classes in the pipeline to process the data as `execute()`.
 $pipeline->via( 'execute' );
 
-// Set the method used in a class to process the data as `borkborkbork()`.
+// Set the method used in all classes in the pipeline to process the data as `borkborkbork()`.
 $pipeline->via( 'borkborkbork' );
 ```
