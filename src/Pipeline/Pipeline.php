@@ -162,8 +162,6 @@ class Pipeline {
 	/**
 	 * Run the pipeline and return the result.
 	 *
-	 * @param Closure|null $destination The destination callback.
-	 *
 	 * @return mixed
 	 */
 	#[\ReturnTypeWillChange]
