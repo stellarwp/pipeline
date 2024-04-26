@@ -79,6 +79,21 @@ actually pass whatever you want - a scalar, an object, an array, whatever.*
 Let's say you have a string that you want to pass through a series of steps in order to manipulate it. You can create a
 pipeline to do that like so:
 
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[ucwords]
+		pipe2[trim]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> output
+```
+
 ```php
 use StellarWP\Pipeline\Pipeline;
 
@@ -100,6 +115,23 @@ echo $result;
 ### Building pipelines in parts
 
 You don't need to build the pipeline all at once, you can spread it out over a number of lines.
+
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[ucwords]
+		pipe2[trim]
+		pipe3[strrev]
+
+		pipe1 --> pipe2
+		pipe2 --> pipe3
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe3 --> output
+```
 
 ```php
 use StellarWP\Pipeline\Pipeline;
@@ -134,6 +166,22 @@ echo $result;
 
 If you have a more complicated function that you wish to use as a pipe, you can pass in a callable instead of a string.
 Your closure will need to accept two parameters, the first being the input data and the second being the next item in the pipeline.
+
+
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[Closure]
+		pipe2[ucwords]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> output
+```
 
 ```php
 use StellarWP\Pipeline\Pipeline;
@@ -195,6 +243,21 @@ class TrimTheStringPipe implements PipeInterface {
 
 #### Example pipeline
 
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[SweetUppercasePipe::handle]
+		pipe2[TrimTheStringPipe::handle]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> output
+```
+
 ```php
 use StellarWP\Pipeline\Pipeline;
 
@@ -244,6 +307,21 @@ class DifferentTrimTheStringPipe {
 
 #### Example pipeline
 
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[DifferentSweetUppercasePipe::execute]
+		pipe2[DifferentTrimTheStringPipe::execute]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> output
+```
+
 ```php
 use StellarWP\Pipeline\Pipeline;
 
@@ -271,6 +349,23 @@ Sometimes you may want to do more than returning the result when the pipeline co
 using the `then()` (or its alias, `run()`) method instead of `then_return()`.
 
 #### Example pipeline
+
+```mermaid
+flowchart LR
+	input[String]
+	pipe3[Closure]
+	subgraph Pipeline
+		pipe1[ucwords]
+		pipe2[trim]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> pipe3
+	pipe3 --> output
+```
 
 ```php
 use StellarWP\Pipeline\Pipeline;
@@ -304,6 +399,21 @@ echo $result;
 Pipelines can be instantiated with a container that conforms to the [stellarwp/container-contract](https://github.com/stellarwp/container-contract) `StellarWP\ContainerContract\ContainerInterface` interface.
 Adding a container to the pipeline allows you to pass classes as pipes and allow those classes to be instantiated when
 the pipeline is being run.
+
+```mermaid
+flowchart LR
+	input[String]
+	subgraph Pipeline
+		pipe1[SweetUppercasePipe::handle]
+		pipe2[TrimTheStringPipe::handle]
+
+		pipe1 --> pipe2
+	end
+	output[Output data]
+
+	input --> pipe1
+	pipe2 --> output
+```
 
 ```php
 use StellarWP\Pipeline\Pipeline;
