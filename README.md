@@ -473,6 +473,7 @@ MyProject/
 	Response/
 		Intake_Response.php
 		Failed_Response.php
+		Response_Transporter.php
 	Container.php
 	Put_It_All_Together.php
 ```
@@ -662,6 +663,7 @@ use StellarWP\Pipeline\Contracts\Pipe;
 use MyProject\Container;
 use MyProject\Response\Intake_Response;
 use MyProject\Response\Failed_Response;
+use MyProject\Response\Response_Transporter;
 
 class Listener implements Pipe {
 	/**
