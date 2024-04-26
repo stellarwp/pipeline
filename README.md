@@ -723,6 +723,17 @@ $listener->handle_response( $request );
 
 // If the request was NOT successful, the `myproject/rest/event` action will be fired once to indicate
 // that the response was received. And a second time to indicate that there was an error.
+
+// We can do the same thing for other requests.
+
+// Likewise, these lines would likely be done in a class somewhere. These would probably live in different classes.
+$request  = wp_remote_get( 'https://example.com/myproject/v1/something-else' );
+$listener = $container->get( Listener::class );
+$listener->handle_response( $request );
+
+$request  = wp_remote_get( 'https://example.com/myproject/v1/borkborkbork' );
+$listener = $container->get( Listener::class );
+$listener->handle_response( $request );
 ```
 
 ## Methods
