@@ -35,6 +35,7 @@ flowchart LR
   * [Using classes with the `handle` method](#using-classes-with-the-handle-method)
   * [Using classes with a custom method](#using-classes-with-a-custom-method)
   * [Doing more than returning](#doing-more-than-returning)
+  * [Bailing early](#bailing-early)
   * [Using a container in the pipeline](#using-a-container-in-the-pipeline)
   * [Declaring pipelines for reuse](#declaring-pipelines-for-reuse)
     * [Example](#example)
@@ -350,6 +351,45 @@ $result = $pipeline->run();
 
 // The output would be stored in $result and would be:
 // A Sample String That Is Passed Through To All Pipes.
+echo $result;
+```
+
+### Bailing early
+
+Sometimes in the middle of a pipeline, you want to stop processing the rest of the pipes and return a value. Luckily, you
+can do this with a `return` statement!
+
+#### Example pipeline
+
+```php
+use StellarWP\Pipeline\Pipeline;
+
+$pipeline  = new Pipeline();
+
+$pipeline->pipes(
+	'trim',
+	static function ( $passable, Closure $next ) {
+		if ( $passable === 'bork' ) {
+			return $passable;
+		}
+
+		return $next( $passable );
+	},
+	'ucwords'
+);
+
+$pipeline->send( 'bork     ' );
+$result = $pipeline->run();
+
+// The output would be stored in $result and would be: "bork"
+// It would not get to the `ucwords` pipe.
+echo $result;
+
+$pipeline->send( 'cowbell     ' );
+$result = $pipeline->run();
+
+// The output would be stored in $result and would be: "Cowbell" because it WOULD get to the `ucwords` pipe due to
+// the second pipe only returning if the value is "bork".
 echo $result;
 ```
 

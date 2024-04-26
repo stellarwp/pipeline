@@ -254,4 +254,31 @@ class PipelineTest extends AbstractBase {
 
 		$this->assertSame( 'A Sample String That Is Passed Through To All Pipes.', $result );
 	}
+
+	public function test_it_bails_early() {
+		$pipeline = $this->container->get( Pipeline::class );
+		$result   = $pipeline->send( 'bork' )
+			->through(
+				static function ( string $passable, Closure $next ) {
+					return false;
+				},
+				'trim',
+			)->then();
+
+		$this->assertFalse( $result );
+	}
+
+	public function test_it_bails_in_the_middle() {
+		$pipeline = $this->container->get( Pipeline::class );
+		$result   = $pipeline->send( 'bork        ' )
+			->through(
+				'trim',
+				static function ( string $passable, Closure $next ) {
+					return $passable;
+				},
+				'ucwords',
+			)->then();
+
+		$this->assertSame( 'bork', $result );
+	}
 }
