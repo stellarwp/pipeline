@@ -491,6 +491,11 @@ use MyProject\Response\Failed_Response;
 
 class Service_Provider {
 	/**
+	 * @var string
+	 */
+	const REQUEST_PIPELINE = 'myproject.request-pipeline';
+
+	/**
 	 * @var ContainerInterface
 	 */
 	protected $container;
@@ -509,7 +514,7 @@ class Service_Provider {
 		// Bind `request-pipeline` to the container as a singleton. The first time that `->get( 'request-pipeline' )` is
 		// called, the pipeline will will be instantiated and returned. Subsequent calls to `->get( 'request-pipeline' )`
 		// will return the same instance of the pipeline.
-		$this->container->singleton( 'request-pipeline', function(): Pipeline {
+		$this->container->singleton( self::REQUEST_PIPELINE, function(): Pipeline {
 			$pipeline = new Pipeline( $this->container );
 			$pipeline->pipes(
 				Intake_Response::class,
@@ -522,7 +527,7 @@ class Service_Provider {
 		// Bind the class name of Listener to the container. Any time that `->get( Listener::class )` is called, a new
 		// instance of the Listener will be returned with the `request-pipeline` injected into the constructor.
 		$this->container->bind( Listener::class, static function ( ContainerInterface $container ): Listener {
-			return new Listener( $container->get( 'request-pipeline' ) );
+			return new Listener( $container->get( self::REQUEST_PIPELINE ) );
 		} );
 	}
 }
@@ -671,6 +676,10 @@ class Listener implements Pipe {
 		$this->response_pipeline = $response_pipeline;
 	}
 
+	/**
+	 * @param WP_REST_Response $response The response that was received.
+	 * @param WP_REST_Request  $request  The request that was made.
+	 */
 	public function handle_response( WP_REST_Response $response, WP_REST_Request $request ): void {
 		$response = rest_ensure_response( $response );
 
