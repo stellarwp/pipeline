@@ -64,7 +64,9 @@ composer require stellarwp/pipeline
 
 ## Prerequisites
 
-To actually _use_ the Pipeline library, you must have a container that conforms to the `ContainerInterface` interface found in [stellarwp/container-contract](https://github.com/stellarwp/container-contract).
+There aren't any required prerequisites of note.
+
+However! If you wish to use the [container-based pipes](#using-a-container-in-the-pipeline), you will need a container that conforms to the `ContainerInterface` interface found in [stellarwp/container-contract](https://github.com/stellarwp/container-contract).
 
 ## Getting started
 
