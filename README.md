@@ -211,15 +211,15 @@ You can even create your own classes to use as pipes in the pipeline. For a clas
 a method that accepts two parameters, the first being the input data and the second being the next item in the pipeline.
 
 By default, the Pipeline expects that the method is called `handle`. If you want to use that method name, you can
-optionally implement the `StellarWP\Pipeline\Contracts\PipeInterface` interface to enforce that method convention.
+optionally implement the `StellarWP\Pipeline\Contracts\Pipe` interface to enforce that method convention.
 
 #### Example classes
 
 First class:
 ```php
-use StellarWP\Pipeline\Contracts\PipeInterface;
+use StellarWP\Pipeline\Contracts\Pipe;
 
-class SweetUppercasePipe implements PipeInterface {
+class SweetUppercasePipe implements Pipe {
 	public function handle( $passable, Closure $next ) {
 		$passable = ucwords( $passable );
 
@@ -230,9 +230,9 @@ class SweetUppercasePipe implements PipeInterface {
 
 Second class:
 ```php
-use StellarWP\Pipeline\Contracts\PipeInterface;
+use StellarWP\Pipeline\Contracts\Pipe;
 
-class TrimTheStringPipe implements PipeInterface {
+class TrimTheStringPipe implements Pipe {
 	public function handle( $passable, Closure $next ) {
 		$passable = trim( $passable );
 

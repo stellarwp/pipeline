@@ -9,7 +9,7 @@ use Closure;
  *
  * @package StellarWP\Pipeline\Contracts
  */
-interface PipeInterface {
+interface Pipe {
 	/**
 	 * Handle the given value.
 	 *
